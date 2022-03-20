@@ -6,6 +6,7 @@
 #include"structs.h"
 
 /* Prototyping funtions */
+void main_loop();
 void quicksort(airport aArray[MAXAIRPORTS], int iFirst, int iLast);
 int partition(airport aArray[MAXAIRPORTS], int iFirst, int iLast);
 void add_airplane(char* arg);
@@ -13,7 +14,7 @@ void list_all_ap();
 void list_ap(char* arg);
 
 /* Global variables */
-airport airport_list[MAXAIRPORTS];
+airport aAirports[MAXAIRPORTS];
 int iCurrentAirports = 0;
 date today = {1, 1, 2022};
 
@@ -25,15 +26,22 @@ int main () {
 			exit(0);
 		case 'a':
 			add_airplane(arg + ARGSTART);
-		/*case 'l':
-			if (strlen(arg) == 1) {
-				list_all();
+			break;
+		case 'l':
+			if (strlen(arg) == 2) {
+				list_all_ap();
 			}
 			else {
-				exit(0);
-			}*/
+				list_ap(arg + ARGSTART);
+			}
+			break;
 	}
+	main_loop();
 	return 0;
+}
+
+void main_loop() {
+	main();
 }
 
 void quicksort(airport aArray[MAXAIRPORTS], int iFirst, int iLast) {
@@ -84,7 +92,7 @@ void add_airplane(char* arg) {
 	}
 	aNewAirport.id[i] = '\0';
 	for (i = 0; i < iCurrentAirports; i++) {
-		if (strcmp(aNewAirport.id, airport_list[i].id) == 0) {
+		if (strcmp(aNewAirport.id, aAirports[i].id) == 0) {
 			printf("duplicate airport\n");
 			return;
 		}
@@ -100,19 +108,49 @@ void add_airplane(char* arg) {
 	}
 	aNewAirport.city[i - j] = '\0';
 	aNewAirport.flights = 0;
-	airport_list[iCurrentAirports] = aNewAirport;
+	aAirports[iCurrentAirports] = aNewAirport;
 	iCurrentAirports++;
 	printf("airport %s\n", aNewAirport.id);
 }
 
 void list_all_ap() {
 	int i;
-	quicksort(airport_list, 0, iCurrentAirports);
+	quicksort(aAirports, 0, iCurrentAirports-1);
 	for (i = 0; i < iCurrentAirports; i++) {
-		printf("%s %s %s %d", airport_list[i].id, airport_list[i].city, airport_list[i].country, airport_list[i].flights);
+		printf("%s %s %s %d\n", aAirports[i].id, aAirports[i].city, aAirports[i].country, aAirports[i].flights);
 	}
 }
 
 void list_ap(char* arg) {
-	
+	int i, j, k = 0, iExists, iSize = strlen(arg);
+	char sAux[MAXAIRPORTS][IDSIZEAP];
+	/* Checking if all provided IDs exist and storing them,
+	 * useful to printing them later if they all exist*/
+	for (i = 0; i < iSize; i = i+4) {
+		iExists = FALSE;
+		for (j = 0; j < 3; j++) {
+			sAux[k][j] = arg[i + j];
+		}
+		sAux[k][j] = '\0';
+		for (j = 0; j < iCurrentAirports; j++) {
+			if (strcmp(sAux[k], aAirports[j].id) == 0) {
+				iExists = TRUE;
+				break;
+			}
+		}
+		if (iExists == FALSE) {
+			printf("%s: no such airport ID\n", sAux[k]);
+			return;
+		}
+		k++;
+	}
+	/* Printing all requested airports */
+	for (i = 0; i < iCurrentAirports; i++) {
+		for (j = 0; j < iCurrentAirports; j++) {
+			if (strcmp(sAux[i], aAirports[j].id) == 0) {
+				printf("%s %s %s %d\n", aAirports[i].id, aAirports[i].city, aAirports[i].country, aAirports[i].flights);
+				break;
+			}
+		}
+	}
 }
