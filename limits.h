@@ -12,3 +12,6 @@
 /* Arg related values */
 #define ARGSIZE MAXAIRPORTS*(IDSIZEAP+1)+3
 #define ARGSTART 2
+/* Boolean values */
+#define TRUE 1
+#define FALSE 0
