@@ -2,46 +2,15 @@
 #include<stdlib.h>
 #include<string.h>
 #include<ctype.h>
+#include"limits.h"
+#include"structs.h"
 
-/* Airport related values */
-#define MAXAIRPORTS 40
-#define IDSIZEAP 4
-#define COUNTRYSIZE 31
-#define CITYSIZE 51
-/* Flight related values */
-#define MAXFLIGHTS 30000
-#define IDSIZEFL 7
-/* Time and date related values */
-#define TIMESIZE 6
-#define DATESIZE 11
-/* Arg related values */
-#define ARGSIZE MAXAIRPORTS*(IDSIZEAP+1)+3
-#define ARGSTART 2
-
-/* Prototyping functions */
+/* Prototyping funtions */
+void quicksort(airport aArray[MAXAIRPORTS], int iFirst, int iLast);
+int partition(airport aArray[MAXAIRPORTS], int iFirst, int iLast);
 void add_airplane(char* arg);
-
-/* Declaring structs */
-typedef struct date{
-	int day;
-	int month;
-	int year;
-} date;
-
-typedef struct airport {
-	char id[IDSIZEAP];
-	char country[COUNTRYSIZE];
-	char city[CITYSIZE];
-	int flights;
-} airport;
-
-typedef struct flight {
-	char id[IDSIZEFL];
-	airport departure;
-	airport arrival;
-	int duration;
-	int maxPassengers;
-} flight;
+void list_all_ap();
+void list_ap(char* arg);
 
 /* Global variables */
 airport airport_list[MAXAIRPORTS];
@@ -56,12 +25,45 @@ int main () {
 			exit(0);
 		case 'a':
 			add_airplane(arg + ARGSTART);
-		case 'l':
-			if (strlen(arg) != 1) {
-				list_airports(arg + ARGSTART);
+		/*case 'l':
+			if (strlen(arg) == 1) {
+				list_all();
 			}
+			else {
+				exit(0);
+			}*/
 	}
 	return 0;
+}
+
+void quicksort(airport aArray[MAXAIRPORTS], int iFirst, int iLast) {
+	int iPartition;
+	if (iFirst < iLast) {
+		iPartition = partition(aArray, iFirst, iLast);
+		quicksort(aArray, iFirst, iPartition-1);
+		quicksort(aArray, iPartition+1, iLast);
+	}
+}
+
+int partition(airport aArray[MAXAIRPORTS], int iFirst, int iLast) {
+	int i = iFirst+1, j = iLast;
+	char sPivot[IDSIZEAP], sAux[IDSIZEAP];
+	strcpy(sPivot, aArray[iFirst].id);
+	while (i < j) {
+		while (strcmp(aArray[i].id, sPivot) <= 0) {
+			i++;
+		}
+		while (strcmp(aArray[j].id, sPivot) > 0) {
+			j++;
+		}
+		strcpy(sAux, aArray[i].id);
+		strcpy(aArray[i].id, aArray[j].id);
+		strcpy(aArray[j].id, sAux);
+	}
+	strcpy(sAux, aArray[iFirst].id);
+	strcpy(aArray[iFirst].id, aArray[j].id);
+	strcpy(aArray[j].id, sAux);
+	return j;
 }
 
 void add_airplane(char* arg) {
@@ -103,4 +105,14 @@ void add_airplane(char* arg) {
 	printf("airport %s\n", aNewAirport.id);
 }
 
-void list_airports(char* arg)
+void list_all_ap() {
+	int i;
+	quicksort(airport_list, 0, iCurrentAirports);
+	for (i = 0; i < iCurrentAirports; i++) {
+		printf("%s %s %s %d", airport_list[i].id, airport_list[i].city, airport_list[i].country, airport_list[i].flights);
+	}
+}
+
+void list_ap(char* arg) {
+	
+}
