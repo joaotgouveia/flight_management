@@ -1,8 +1,8 @@
 /* Airport related values */
 #define MAXAIRPORTS 40
 #define IDSIZEAP 4
-#define COUNTRYSIZE 31
-#define CITYSIZE 51
+#define COUNTRYSIZE 30
+#define CITYSIZE 50
 /* Flight related values */
 #define MAXFLIGHTS 30000
 #define IDSIZEFL 7
