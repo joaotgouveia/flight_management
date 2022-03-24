@@ -23,6 +23,6 @@ typedef struct {
 	char arrival[IDAP];
 	date date;
 	time time;
-	time duration;
+	int duration[TUPLE];
 	int capacity;
 } flight;
