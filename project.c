@@ -11,14 +11,16 @@ void swap_ap(int i, int j);
 void print_ap(airport aAirport);
 int find_ap(char cId[IDAP]);
 void format_time_fl(char* dest, flight f);
-void quicksort_fl(int iFirst, int iLast);
-int partition_fl(int iFirst, int iLast);
-void swap_fl(int i, int j);
+void quicksort_fl(flight* fArray, int iFirst, int iLast);
+int partition_fl(flight* fArray, int iFirst, int iLast);
+void swap_fl(flight* fArray, int i, int j);
 void print_fl(flight fFlight, int iMode);
 void read_date(date* dDate, char* arg);
 int same_date(date dDate1, date dDate2);
 int valid_date(date dDate);
 void arrival_date(char sDest[4][DAY], char sYear[YEAR], flight fFlight);
+void read_time(time* tTime, char* arg);
+int read_duration(int* iDuration, char* arg);
 void add_ap(char* arg);
 void list_all_ap();
 void list_ap(char* arg);
@@ -26,6 +28,7 @@ void list_all_fl();
 void add_fl(char* arg);
 void departures(char* cId);
 void arrivals(char* cId);
+void advance_date(char* arg);
 
 /* Global variables */
 airport aAirports[MAXAIRPORTS];
@@ -36,8 +39,8 @@ date today = {"01", "01", "2022"};
 int main () {
 	int iExit = FALSE;
 	char arg[ARGSIZE];
-	fgets(arg, sizeof(char)*ARGSIZE, stdin);
 	while (iExit == FALSE) {
+		fgets(arg, sizeof(char)*ARGSIZE, stdin);
 		switch (arg[0]) {
 			case 'q':
 				iExit = TRUE;
@@ -66,6 +69,9 @@ int main () {
 				break;
 			case 'c':
 				arrivals(arg + ARGSTART);
+				break;
+			case 't':
+				advance_date(arg + ARGSTART);
 				break;
 		}
 	}
@@ -129,47 +135,55 @@ void format_time_fl(char* dest, flight f) {
 	sprintf(dest, "%s%s%s%s%s", f.date.year, f.date.month, f.date.day, f.time.hours, f.time.mins);
 }
 
-void quicksort_fl(int iFirst, int iLast) {
-	int iPartition;
-	if (iFirst < iLast) {
-		iPartition = partition_fl(iFirst, iLast);
-		quicksort_fl(iFirst, iPartition-1);
-		quicksort_fl(iPartition+1, iLast);
+void copy_flights(flight* fArray) {
+	int i;
+	for (i = 0; i < iCurrentFlights; i++) {
+		fArray[i] = fFlights[i];
 	}
 }
 
-int partition_fl(int iFirst, int iLast) {
+void quicksort_fl(flight* fArray, int iFirst, int iLast) {
+	int iPartition;
+	if (iFirst < iLast) {
+		iPartition = partition_fl(fArray, iFirst, iLast);
+		quicksort_fl(fArray, iFirst, iPartition-1);
+		quicksort_fl(fArray, iPartition+1, iLast);
+	}
+}
+
+int partition_fl(flight* fArray, int iFirst, int iLast) {
 	int i = iFirst, j = iLast;
 	char sPivot[CATDATETIME], sAux[CATDATETIME];
-	format_time_fl(sPivot, fFlights[iFirst]);
+	format_time_fl(sPivot, fArray[iFirst]);
 	while (i < j) {
-		format_time_fl(sAux, fFlights[i]);
+		format_time_fl(sAux, fArray[i]);
 		while (strcmp(sAux, sPivot) <= 0 && i < iLast) {
 			i++;
-			format_time_fl(sAux, fFlights[i]);
+			format_time_fl(sAux, fArray[i]);
 		}
-		format_time_fl(sAux, fFlights[j]);
+		format_time_fl(sAux, fArray[j]);
 		while (strcmp(sAux, sPivot) > 0) {
 			j--;
-			format_time_fl(sAux, fFlights[j]);
+			format_time_fl(sAux, fArray[j]);
 		}
 		if (i < j) {
-			swap_fl(i, j);
+			swap_fl(fArray, i, j);
 		}
 	}
-	swap_fl(iFirst, j);
+	swap_fl(fArray, iFirst, j);
 	return j;
 }
 
-void swap_fl(int i, int j) {
+void swap_fl(flight* fArray, int i, int j) {
 	flight fAux;
 	if (i == j) {
 		return;
 	}
-	fAux = fFlights[i];
-	fFlights[i] = fFlights[j];
-	fFlights[j] = fAux;
+	fAux = fArray[i];
+	fArray[i] = fArray[j];
+	fArray[j] = fAux;
 }
+
 void print_fl(flight fFlight, int iMode) {
 	printf("%s ", fFlight.id);
 	if (iMode != 1) {
@@ -212,8 +226,8 @@ void arrival_date(char sDest[4][DAY], char sYear[YEAR], flight fFlight) {
 	int i, iDurMins, iDurHours, iYear;
 	int iTime[4];
 	/* Converting strings to int for easier math */
-	iDurMins = atoi(fFlight.duration.mins);
-	iDurHours = atoi(fFlight.duration.hours);
+	iDurMins = fFlight.duration[1];
+	iDurHours = fFlight.duration[0];
 	iTime[0] = atoi(fFlight.time.mins);
 	iTime[1] = atoi(fFlight.time.hours);
 	iTime[2] = atoi(fFlight.date.day);
@@ -261,10 +275,28 @@ void arrival_date(char sDest[4][DAY], char sYear[YEAR], flight fFlight) {
 }
 
 void read_time(time* tTime, char* arg) {
-	strncpy(tTime->hours, arg, 2);
-	tTime->hours[2] = '\0';
-	strncpy(tTime->mins, arg+HOURS, 2);
-	tTime->mins[2] = '\0';
+	strncpy(tTime->hours, arg, HOURS-1);
+	tTime->hours[HOURS-1] = '\0';
+	strncpy(tTime->mins, arg+HOURS, MINS-1);
+	tTime->mins[MINS-1] = '\0';
+}
+
+int read_duration(int* iDuration, char* arg) {
+	char cAux[MINS];
+	int i, iOffset;
+	for (i = 0; arg[i] != ':'; i++) {
+		cAux[i] = arg[i];
+	}
+	iOffset = i+1;
+	cAux[MINS-1] = '\0';
+	iDuration[0] = atoi(cAux);
+	for (i = 0; arg[i+iOffset] != ' '; i++) {
+		cAux[i] = arg[i+iOffset];
+	}
+	cAux[MINS-1] = '\0';
+	iDuration[1] = atoi(cAux);
+	iOffset +=i+1;
+	return iOffset;
 }
 
 void add_ap(char* arg) {
@@ -307,7 +339,7 @@ void add_ap(char* arg) {
 
 void list_all_ap() {
 	int i;
-	quicksort_ap(0, iCurrentAirports-1);
+	quicksort_ap(0, iCurrentAirports - 1);
 	for (i = 0; i < iCurrentAirports; i++) {
 		print_ap(aAirports[i]);
 	}
@@ -318,9 +350,9 @@ void list_ap(char* arg) {
 	char sAux[IDAP];
 	/* Checking if all provided IDs exist and storing them,
 	 * useful to printing them later if they all exist */
-	for (i = 0; i < iSize; i += 4) {
-		strncpy(sAux, arg+i, 3);
-		sAux[3] = '\0';
+	for (i = 0; i < iSize; i += IDAP) {
+		strncpy(sAux, arg+i, IDAP-1);
+		sAux[IDAP-1] = '\0';
 		if (find_ap(sAux) == NOTFOUND) {
 			printf("%s: no such airport ID\n", sAux);
 		}
@@ -343,7 +375,7 @@ void list_all_fl() {
 }
 
 void add_fl(char* arg) {
-	int i, iDepartureIndex;
+	int i, iDepartureIndex, iOffset;
 	char cCapacity[CAPACITY];
 	flight fNewFlight;
 	for (i = 0; arg[i] != ' ' && arg[i] != '\t'; i++) {
@@ -396,16 +428,12 @@ void add_fl(char* arg) {
 	/* Checking if duration is valid */
 	read_time(&fNewFlight.time, arg);
 	arg += TIME;
-	read_time(&fNewFlight.duration, arg);
-	if(strcmp(fNewFlight.duration.hours, "12") > 0) {
+	iOffset = read_duration(fNewFlight.duration, arg);
+	if(fNewFlight.duration[0] > 12) {
 		printf("invalid duration\n");
 		return;
 	}
-	else if(strcmp(fNewFlight.duration.hours, "12") == 0 && strcmp(fNewFlight.duration.mins, "00") > 0) {
-		printf("invalid duration\n");
-		return;
-	}
-	arg += TIME;
+	arg += iOffset;
 	/* Checking if capacity is valid */
 	strncpy(cCapacity, arg, CAPACITY-1);
 	cCapacity[CAPACITY-1] = '\0';
@@ -415,7 +443,7 @@ void add_fl(char* arg) {
 		return;
 	}
 	/* Adding one more flight to the departure counter */
-	aAirports[iDepartureIndex].departures += 1;
+	aAirports[iDepartureIndex].departures++;
 	/* Adding flight to flight list */
 	fFlights[iCurrentFlights] = fNewFlight;
 	iCurrentFlights++;
@@ -423,15 +451,17 @@ void add_fl(char* arg) {
 
 void departures(char* cId) {
 	int i;
+	flight fSortedFlights[MAXFLIGHTS];
 	cId[3] = '\0';
 	if (find_ap(cId) == NOTFOUND) {
-		printf("%s: no such id\n", cId);
+		printf("%s: no such airport ID\n", cId);
 		return;
 	}
-	quicksort_fl(0, iCurrentFlights);
+	copy_flights(fSortedFlights);
+	quicksort_fl(fSortedFlights, 0, iCurrentFlights-1);
 	for (i = 0; i < iCurrentFlights; i++) {
-		if (strcmp(cId, fFlights[i].departure) == 0) {
-			print_fl(fFlights[i], 1);
+		if (strcmp(cId, fSortedFlights[i].departure) == 0) {
+			print_fl(fSortedFlights[i], 1);
 		}
 	}
 }
@@ -439,16 +469,18 @@ void departures(char* cId) {
 void arrivals(char* cId) {
 	int i;
 	char sTime[4][DAY], sYear[YEAR];
+	flight fSortedFlights[MAXFLIGHTS];
 	cId[3] = '\0';
 	if (find_ap(cId) == NOTFOUND) {
-		printf("%s: no such id\n", cId);
+		printf("%s: no such airport ID\n", cId);
 		return;
 	}
-	quicksort_fl(0, iCurrentFlights);
+	copy_flights(fSortedFlights);
+	quicksort_fl(fSortedFlights, 0, iCurrentFlights-1);
 	for (i = 0; i < iCurrentFlights; i++) {
-		if (strcmp(cId, fFlights[i].arrival) == 0) {
-			arrival_date(sTime, sYear, fFlights[i]);
-			print_fl(fFlights[i], 2);
+		if (strcmp(cId, fSortedFlights[i].arrival) == 0) {
+			arrival_date(sTime, sYear, fSortedFlights[i]);
+			print_fl(fSortedFlights[i], 2);
 			printf("%s-%s-%s ", sTime[2], sTime[3], sYear);
 			printf("%s:%s\n", sTime[1], sTime[0]);
 		}
@@ -463,4 +495,5 @@ void advance_date(char* arg) {
 		return;
 	}
 	today = dNewToday;
+	printf("%s-%s-%s\n", dNewToday.day, dNewToday.month, dNewToday.year);
 }
