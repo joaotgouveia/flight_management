@@ -3,26 +3,28 @@ typedef struct {
 	char day[DAY];
 	char month[MONTH];
 	char year[YEAR];
-} date;
+} Date;
 
 typedef struct {
 	char hours[HOURS];
 	char mins[MINS];
-} time;
+} Time;
 
 typedef struct {
 	char id[IDAP];
 	char country[COUNTRY];
 	char city[CITY];
 	int departures;
-} airport;
+} Airport;
 
 typedef struct {
 	char id[IDFL];
 	char departure[IDAP];
 	char arrival[IDAP];
-	date date;
-	time time;
+	Date date;
+	Date arrDate;
+	Time time;
+	Time arrTime;
 	int duration[TUPLE];
 	int capacity;
-} flight;
+} Flight;
