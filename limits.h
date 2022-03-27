@@ -17,6 +17,7 @@
 #define DATE 11
 #define DATESTART IDAP*2
 #define CATDATETIME DATE-3+TIME-1
+#define CATDATE DATE-2
 /* Arg related values */
 #define ARGSIZE MAXAIRPORTS*(IDAP+1)+3
 #define ARGSTART 2
