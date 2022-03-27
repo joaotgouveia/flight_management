@@ -19,7 +19,7 @@
 #define CATDATETIME DATE-3+TIME-1
 #define CATDATE DATE-2
 /* Arg related values */
-#define ARGSIZE MAXAIRPORTS*(IDAP+1)+3
+#define ARGSIZE 80
 #define ARGSTART 2
 /* Boolean values */
 #define TRUE 1
