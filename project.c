@@ -33,13 +33,14 @@ void fill_arrival_date(Flight* fFlight);
 /* Time related funtions */
 void read_time(Time* tTime, char* arg);
 int read_duration(int* iDuration, char* arg);
+int invalid_duration(int* iDuration);
 /* Main project functions */
 void add_ap(char* arg);
 void list_all_ap();
 void list_ap(char* arg);
 void list_all_fl();
 void add_fl(char* arg);
-void departures(char* cId);
+void list_arr_or_dep(char* cId, int iMode);
 void arrivals(char* cId);
 void advance_date(char* arg);
 
@@ -76,10 +77,10 @@ int main () {
 				}
 				break;
 			case 'p':
-				departures(arg+ARGSTART);
+				list_arr_or_dep(arg+ARGSTART, FALSE);
 				break;
 			case 'c':
-				arrivals(arg+ARGSTART);
+				list_arr_or_dep(arg+ARGSTART, TRUE);
 				break;
 			case 't':
 				advance_date(arg+ARGSTART);
@@ -329,10 +330,10 @@ void swap_fl(Flight* fArray, int i, int j) {
  **/
 void print_fl(Flight fFlight, int iMode) {
 	printf("%s ", fFlight.id);
-	if (iMode != 1) {
+	if (iMode != FALSE) {
 		printf("%s ", fFlight.departure);
 	}
-	if (iMode != 2) {
+	if (iMode != TRUE) {
 		printf("%s ", fFlight.arrival);
 		printf("%s-%s-%s ", fFlight.date.day, fFlight.date.month, fFlight.date.year);
 		printf("%s:%s\n", fFlight.time.hours, fFlight.time.mins);
@@ -558,6 +559,26 @@ int read_duration(int* iDest, char* arg) {
 }
 
 /**
+ * Function: invalid_duration
+ * --------------------
+ * Checks if duration is invalid.
+ *
+ *  Return: int
+ **/
+int invalid_duration(int* iDuration) {
+	if(iDuration[0] > 12) {
+		return TRUE;
+	}
+	else if (iDuration[0] == 12 && iDuration[1] > 0) {
+		return TRUE;
+	}
+	else if (iDuration[0] <= 0 && iDuration[1] <= 0) {
+		return TRUE;
+	}
+	return FALSE;
+}
+
+/**
  * Function: add_ap
  * --------------------
  * Adds an airport to
@@ -653,7 +674,7 @@ void list_ap(char* arg) {
 void list_all_fl() {
 	int i;
 	for (i = 0; i < iCurrentFlights; i++) {
-		print_fl(fFlights[i], 0);
+		print_fl(fFlights[i], 3);
 	}
 }
 
@@ -724,11 +745,7 @@ void add_fl(char* arg) {
 	read_time(&fNewFlight.time, arg);
 	arg += TIME;
 	iOffset = read_duration(fNewFlight.duration, arg);
-	if(fNewFlight.duration[0] > 12) {
-		printf("invalid duration\n");
-		return;
-	}
-	else if (fNewFlight.duration[0] == 12 && fNewFlight.duration[1] > 0) {
+	if(invalid_duration(fNewFlight.duration)) {
 		printf("invalid duration\n");
 		return;
 	}
@@ -751,15 +768,15 @@ void add_fl(char* arg) {
 }
 
 /**
- * Function: departures
+ * Function: list_arr_or_dep
  * --------------------
- * Lists all departures from
- * an airport, sorted by departure
- * time.
+ * Lists all departures/arrivals 
+ * from an airport, sorted by 
+ * departure/arrival time.
  *
  *  Return: void
  **/
-void departures(char* cId) {
+void list_arr_or_dep(char* cId, int iMode) {
 	int i, iSize;
 	Flight fSortedFlights[MAXFLIGHTS];
 	cId[IDAP-1] = '\0';
@@ -767,38 +784,11 @@ void departures(char* cId) {
 		printf("%s: no such airport ID\n", cId);
 		return;
 	}
-	iSize = copy_flights(fSortedFlights, cId, FALSE);
+	iSize = copy_flights(fSortedFlights, cId, iMode);
 	if (iSize != 0) {
-		quicksort_fl(fSortedFlights, 0, iSize-1, FALSE);
+		quicksort_fl(fSortedFlights, 0, iSize-1, iMode);
 		for (i = 0; i < iSize; i++) {
-			print_fl(fSortedFlights[i], 1);
-		}
-	}
-}
-
-/**
- * Function: arrivals
- * --------------------
- * Lists all arrivals from
- * an airport, sorted by arival
- * time.
- *
- *  Return: void
- **/
-void arrivals(char* cId) {
-	int i, iSize;
-	Flight fSortedFlights[MAXFLIGHTS];
-	cId[IDAP-1] = '\0';
-	if (find_ap(cId) == NOTFOUND) {
-		printf("%s: no such airport ID\n", cId);
-		return;
-	}
-	/* Calculating and saving arrival date */
-	iSize = copy_flights(fSortedFlights, cId, TRUE);
-	if (iSize != 0) {
-		quicksort_fl(fSortedFlights, 0, iSize-1, TRUE);
-		for (i = 0; i < iSize; i++) {
-			print_fl(fSortedFlights[i], 2);
+			print_fl(fSortedFlights[i], iMode);
 		}
 	}
 }
