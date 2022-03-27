@@ -20,6 +20,7 @@ void swap_fl(Flight* fArray, int i, int j);
 void format_time_fl(char* dest, Flight f, int iArrivals);
 void print_fl(Flight fFlight, int iMode);
 /* Date related funtions */
+void convert_to_str(char* sDest, int iTime);
 void read_date(Date* dDate, char* arg);
 int same_date(Date dDate1, Date dDate2);
 int invalid_date(Date dDate);
@@ -44,13 +45,11 @@ int iCurrentAirports, iCurrentFlights;
 Date today = {"01", "01", "2022"};
 
 int main () {
-	int iExit = FALSE;
 	char arg[ARGSIZE];
-	while (iExit == FALSE) {
+	do {
 		fgets(arg, sizeof(char)*ARGSIZE, stdin);
 		switch (arg[0]) {
 			case 'q':
-				iExit = TRUE;
 				break;
 			case 'a':
 				add_ap(arg+ARGSTART);
@@ -81,10 +80,18 @@ int main () {
 				advance_date(arg+ARGSTART);
 				break;
 		}
-	}
+	} while (arg[0] != 'q');
 	return 0;
 }
 
+/**
+ * Function: quicksort_ap
+ * --------------------
+ *  Quicksort sorting algorithm
+ *  applied to airport struct.
+ *
+ *  Return: void
+ **/
 void quicksort_ap(int iFirst, int iLast) {
 	int iPartition;
 	if (iFirst < iLast) {
@@ -94,6 +101,14 @@ void quicksort_ap(int iFirst, int iLast) {
 	}
 }
 
+/**
+ * Function: partition_ap
+ * --------------------
+ * Calculates and returns a partition
+ * for quicksort.
+ *
+ *  Return: int
+ **/
 int partition_ap(int iFirst, int iLast) {
 	int iPivot = iFirst, i = iFirst, j = iLast;
 	while (i < j) {
@@ -111,6 +126,14 @@ int partition_ap(int iFirst, int iLast) {
 	return j;
 }
 
+/**
+ * Function: swap_ap
+ * --------------------
+ * Swaps two airports in 
+ * an array.
+ *
+ *  Return: void
+ **/
 void swap_ap(int i, int j) {
 	Airport aAux;
 	if (i == j) {
@@ -121,6 +144,13 @@ void swap_ap(int i, int j) {
 	aAirports[j] = aAux;
 }
 
+/**
+ * Function: print_ap
+ * --------------------
+ * Prints an airport.
+ *
+ *  Return: void
+ **/
 void print_ap(Airport aAirport) {
 	printf("%s ", aAirport.id); 
 	printf("%s ", aAirport.city); 
@@ -128,6 +158,16 @@ void print_ap(Airport aAirport) {
 	printf("%d\n", aAirport.departures); 
 }
 
+/**
+ * Function: find_ap
+ * --------------------
+ * Finds an airport in aAirports
+ * and returns its index. Returns
+ * NOTFOUND if the airport doesn't
+ * exist.
+ *
+ *  Return: int
+ **/
 int find_ap(char cId[IDAP]) {
 	int i;
 	for (i = 0; i < iCurrentAirports; i++) {
@@ -138,6 +178,14 @@ int find_ap(char cId[IDAP]) {
 	return NOTFOUND;
 }
 
+/**
+ * Function: format_time_fl
+ * --------------------
+ * Formats flight time to be 
+ * compared by the quicksort.
+ *
+ *  Return: void
+ **/
 void format_time_fl(char* dest, Flight f, int iArrivals) {
 	if (iArrivals) {
 		sprintf(dest, "%s%s%s%s%s", f.arrDate.year, f.arrDate.month, f.arrDate.day, f.arrTime.hours, f.arrTime.mins);
@@ -147,6 +195,13 @@ void format_time_fl(char* dest, Flight f, int iArrivals) {
 	}
 }
 
+/**
+ * Function: copy_flights
+ * --------------------
+ * Deep copies fFlights.
+ *
+ *  Return: void
+ **/
 void copy_flights(Flight* fArray) {
 	int i;
 	for (i = 0; i < iCurrentFlights; i++) {
@@ -154,6 +209,14 @@ void copy_flights(Flight* fArray) {
 	}
 }
 
+/**
+ * Function: quicksort_fl
+ * --------------------
+ *  Quicksort sorting algorithm
+ *  applied to flight struct.
+ *
+ *  Return: void
+ **/
 void quicksort_fl(Flight* fArray, int iFirst, int iLast, int iArrivals) {
 	int iPartition;
 	if (iFirst < iLast) {
@@ -163,6 +226,14 @@ void quicksort_fl(Flight* fArray, int iFirst, int iLast, int iArrivals) {
 	}
 }
 
+/**
+ * Function: partition_fl
+ * --------------------
+ * Calculates and returns a partition
+ * for quicksort.
+ *
+ *  Return: int
+ **/
 int partition_fl(Flight* fArray, int iFirst, int iLast, int iArrivals) {
 	int i = iFirst, j = iLast;
 	char sPivot[CATDATETIME], sAux[CATDATETIME];
@@ -186,6 +257,14 @@ int partition_fl(Flight* fArray, int iFirst, int iLast, int iArrivals) {
 	return j;
 }
 
+/**
+ * Function: swap_fl
+ * --------------------
+ * Swaps two flights in 
+ * an array.
+ *
+ *  Return: void
+ **/
 void swap_fl(Flight* fArray, int i, int j) {
 	Flight fAux;
 	if (i == j) {
@@ -196,6 +275,13 @@ void swap_fl(Flight* fArray, int i, int j) {
 	fArray[j] = fAux;
 }
 
+/**
+ * Function: print_fl
+ * --------------------
+ * Prints a flight.
+ *
+ *  Return: void
+ **/
 void print_fl(Flight fFlight, int iMode) {
 	printf("%s ", fFlight.id);
 	if (iMode != 1) {
@@ -205,6 +291,15 @@ void print_fl(Flight fFlight, int iMode) {
 		printf("%s ", fFlight.arrival);
 		printf("%s-%s-%s ", fFlight.date.day, fFlight.date.month, fFlight.date.year);
 		printf("%s:%s\n", fFlight.time.hours, fFlight.time.mins);
+	}
+}
+
+void convert_to_str(char* sDest, int iTime) {
+	sprintf(sDest, "%d", iTime);
+	if (strlen(sDest) == 1) {
+		sDest[1] = sDest[0];
+		sDest[0] = '0';
+		sDest[2] = '\0';
 	}
 }
 
@@ -281,38 +376,33 @@ void arrival_date(char sDest[5][YEAR], Flight fFlight) {
 	}
 	/* Converting back to string and formatting all elements except year */
 	for (i = 0; i < 4; i++) {
-		sprintf(sDest[i], "%d", iTime[i]);
-		if (strlen(sDest[i]) == 1) {
-			sDest[i][1] = sDest[i][0];
-			sDest[i][0] = '0';
-			sDest[i][2] = '\0';
-		}
+		convert_to_str(sDest[i], iTime[i]);
 	}
 	/* Year is converted seperately, since it doesn't need formatting */
 	sprintf(sDest[4], "%d", iTime[4]);
 }
 
 void read_time(Time* tTime, char* arg) {
-	strncpy(tTime->hours, arg, HOURS-1);
-	tTime->hours[HOURS-1] = '\0';
-	strncpy(tTime->mins, arg+HOURS, MINS-1);
-	tTime->mins[MINS-1] = '\0';
+	int iTime[TUPLE];
+	read_duration(iTime, arg);
+	convert_to_str(tTime->hours, iTime[0]);
+	convert_to_str(tTime->mins, iTime[1]);
 }
 
-int read_duration(int* iDuration, char* arg) {
+int read_duration(int* iDest, char* arg) {
 	char cAux[MINS];
 	int i, iOffset;
 	for (i = 0; arg[i] != ':'; i++) {
 		cAux[i] = arg[i];
 	}
 	cAux[i] = '\0';
-	iDuration[0] = atoi(cAux);
+	iDest[0] = atoi(cAux);
 	iOffset = i+1;
 	for (i = 0; arg[i+iOffset] != ' '; i++) {
 		cAux[i] = arg[i+iOffset];
 	}
 	cAux[MINS-1] = '\0';
-	iDuration[1] = atoi(cAux);
+	iDest[1] = atoi(cAux);
 	iOffset +=i+1;
 	return iOffset;
 }
