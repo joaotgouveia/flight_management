@@ -345,6 +345,20 @@ void print_fl(Flight fFlight, int iMode) {
 }
 
 /**
+ * Function: invalid_idfl
+ * --------------------
+ * Checks if a flight ID is invalid.
+ *
+ *  Return: int
+ **/
+int invalid_idfl(char cChar, int iIndex) {
+	if (isupper(cChar) && iIndex < 2) {
+		return FALSE;
+	}
+	return (!isdigit(cChar) || iIndex < 2);
+}
+
+/**
  * Function: convert_to_str
  * --------------------
  * Converts a number to 
@@ -690,17 +704,12 @@ void add_fl(char* arg) {
 	char cCapacity[CAPACITY];
 	Flight fNewFlight;
 	for (i = 0; arg[i] != ' '; i++) {
-		if (isupper(arg[i]) && i < 2) {
-			fNewFlight.id[i] = arg[i];
-		}
-		else if (isdigit(arg[i]) && i >= 2) {
-			fNewFlight.id[i] = arg[i];
-		}
-		else {
+		if (invalid_idfl(arg[i], i)) {
 			printf("invalid flight code\n");
 			return;
 		}
-	}
+		fNewFlight.id[i] = arg[i];
+	}	
 	fNewFlight.id[i] = '\0';
 	iIdSize = strlen(fNewFlight.id);
 	if (iIdSize > IDFL || iIdSize < 3) {
