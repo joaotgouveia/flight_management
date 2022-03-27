@@ -26,6 +26,7 @@ void convert_to_str(char* sDest, int iTime);
 Date null_date();
 int is_null_date(Date dDate);
 void read_date(Date* dDate, char* arg);
+void advance_day(int* iDate);
 int same_date(Date dDate1, Date dDate2);
 int invalid_date(Date dDate);
 void arrival_date(char sDest[5][YEAR], Flight fFlight);
@@ -433,8 +434,8 @@ void advance_day(int* iDate) {
 		iDate[1] += 1;
 	}
 	else if (iDate[0] == 31 && (iDate[1] == 4 || iDate[1] == 6 || iDate[1] == 9 || iDate[1] == 11)) {
-		iDate[2] = 1;
-		iDate[3] += 1;
+		iDate[0] = 1;
+		iDate[1] += 1;
 	}
 	else if (iDate[0] == 32 && (iDate[1] == 1 || iDate[1] == 3 || iDate[1] == 5 || iDate[1] == 7 || iDate[1] == 8 || iDate[1] == 10)) {
 		iDate[0] = 1;
@@ -471,9 +472,9 @@ int same_date(Date dDate1, Date dDate2) {
 int invalid_date(Date dDate) {
 	int iYear;
 	char cToday[CATDATE], cDate[CATDATE], cFuture[CATDATE];
-	/* Converting year to int for easier math */
 	sprintf(cToday, "%s%s%s", today.year, today.month, today.day);
 	sprintf(cDate, "%s%s%s", dDate.year, dDate.month, dDate.day);
+	/* Converting year to int for easier math */
 	iYear = atoi(today.year);
 	iYear++;
 	sprintf(cFuture, "%d%s%s", iYear, today.month, today.day);
