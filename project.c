@@ -6,6 +6,7 @@
 #include"structs.h"
 
 /* Airport sorting funtions */
+int less_ap(Airport aAirport1, Airport aAirport2);
 void quicksort_ap(int iFirst, int iLast);
 int partition_ap(int iFirst, int iLast);
 void swap_ap(int i, int j);
@@ -13,6 +14,7 @@ void swap_ap(int i, int j);
 void print_ap(Airport aAirport);
 int find_ap(char cId[IDAP]);
 /* Flight sorting funtions */
+int less_fl(Flight fFlight, char* sFlightTime1, int iArrivals);
 void quicksort_fl(Flight* fArray, int iFirst, int iLast, int iArrivals);
 int partition_fl(Flight* fArray, int iFirst, int iLast, int iArrivals);
 void swap_fl(Flight* fArray, int i, int j);
@@ -21,10 +23,13 @@ void format_time_fl(char* dest, Flight f, int iArrivals);
 void print_fl(Flight fFlight, int iMode);
 /* Date related funtions */
 void convert_to_str(char* sDest, int iTime);
+Date null_date();
+int is_null_date(Date dDate);
 void read_date(Date* dDate, char* arg);
 int same_date(Date dDate1, Date dDate2);
 int invalid_date(Date dDate);
 void arrival_date(char sDest[5][YEAR], Flight fFlight);
+void fill_arrival_date(Flight* fFlight);
 /* Time related funtions */
 void read_time(Time* tTime, char* arg);
 int read_duration(int* iDuration, char* arg);
@@ -85,6 +90,18 @@ int main () {
 }
 
 /**
+ * Function: less_ap
+ * --------------------
+ * Compares two airports
+ * through their Id's.
+ *
+ *  Return: int
+ **/
+int less_ap(Airport aAirport1, Airport aAirport2) {
+	return strcmp(aAirport1.id, aAirport2.id) <= 0;
+}
+
+/**
  * Function: quicksort_ap
  * --------------------
  *  Quicksort sorting algorithm
@@ -112,10 +129,10 @@ void quicksort_ap(int iFirst, int iLast) {
 int partition_ap(int iFirst, int iLast) {
 	int iPivot = iFirst, i = iFirst, j = iLast;
 	while (i < j) {
-		while (strcmp(aAirports[i].id, aAirports[iPivot].id) <= 0 && i < iLast) {
+		while (less_ap(aAirports[i], aAirports[iPivot]) && i < iLast) {
 			i++;
 		}
-		while (strcmp(aAirports[j].id, aAirports[iPivot].id) > 0) {
+		while (!less_ap(aAirports[j], aAirports[iPivot])) {
 			j--;
 		}
 		if (i < j) {
@@ -198,15 +215,47 @@ void format_time_fl(char* dest, Flight f, int iArrivals) {
 /**
  * Function: copy_flights
  * --------------------
- * Deep copies fFlights.
+ * Copies flights from fFlights
+ * with the requested id.
  *
- *  Return: void
+ *  Return: int
  **/
-void copy_flights(Flight* fArray) {
-	int i;
-	for (i = 0; i < iCurrentFlights; i++) {
-		fArray[i] = fFlights[i];
+int copy_flights(Flight* fArray, char* cId, int iArrivals) {
+	int i, iSize = 0;
+	if (iArrivals) {
+		for (i = 0; i < iCurrentFlights; i++) {
+			if (strcmp(fFlights[i].arrival, cId) == 0) {
+				if (is_null_date(fFlights[i].arrDate)) {
+					fill_arrival_date(&fFlights[i]);
+				}
+				fArray[iSize] = fFlights[i];
+				iSize++;
+			}
+		}
 	}
+	else {
+		for (i = 0; i < iCurrentFlights; i++) {
+			if (strcmp(fFlights[i].departure, cId) == 0) {
+				fArray[iSize] = fFlights[i];
+				iSize++;
+			}
+		}
+	}
+	return iSize;
+}
+
+/**
+ * Function: less_fl
+ * --------------------
+ * Compares two flights
+ * through their times.
+ *
+ *  Return: int
+ **/
+int less_fl(Flight fFlight, char* sFlightTime1, int iArrivals) {
+	char sFlightTime2[CATDATETIME];
+	format_time_fl(sFlightTime2, fFlight, iArrivals);
+	return strcmp(sFlightTime2, sFlightTime1) <= 0;
 }
 
 /**
@@ -236,18 +285,14 @@ void quicksort_fl(Flight* fArray, int iFirst, int iLast, int iArrivals) {
  **/
 int partition_fl(Flight* fArray, int iFirst, int iLast, int iArrivals) {
 	int i = iFirst, j = iLast;
-	char sPivot[CATDATETIME], sAux[CATDATETIME];
+	char sPivot[CATDATETIME];
 	format_time_fl(sPivot, fArray[iFirst], iArrivals);
 	while (i < j) {
-		format_time_fl(sAux, fArray[i], iArrivals);
-		while (strcmp(sAux, sPivot) <= 0 && i < iLast) {
+		while (less_fl(fArray[i], sPivot, iArrivals) && i < iLast) {
 			i++;
-			format_time_fl(sAux, fArray[i], iArrivals);
 		}
-		format_time_fl(sAux, fArray[j], iArrivals);
-		while (strcmp(sAux, sPivot) > 0) {
+		while (!less_fl(fArray[j], sPivot, iArrivals)) {
 			j--;
-			format_time_fl(sAux, fArray[j], iArrivals);
 		}
 		if (i < j) {
 			swap_fl(fArray, i, j);
@@ -292,8 +337,22 @@ void print_fl(Flight fFlight, int iMode) {
 		printf("%s-%s-%s ", fFlight.date.day, fFlight.date.month, fFlight.date.year);
 		printf("%s:%s\n", fFlight.time.hours, fFlight.time.mins);
 	}
+	else {
+		printf("%s-%s-%s ", fFlight.arrDate.day, fFlight.arrDate.month, fFlight.arrDate.year);
+		printf("%s:%s\n", fFlight.arrTime.hours, fFlight.arrTime.mins);
+	}
 }
 
+/**
+ * Function: convert_to_str
+ * --------------------
+ * Converts a number to 
+ * a string formating it
+ * to be consistent with
+ * HH:MM.
+ *
+ *  Return: void
+ **/
 void convert_to_str(char* sDest, int iTime) {
 	sprintf(sDest, "%d", iTime);
 	if (strlen(sDest) == 1) {
@@ -303,6 +362,37 @@ void convert_to_str(char* sDest, int iTime) {
 	}
 }
 
+/**
+ * Function: null_date
+ * --------------------
+ * Creates a null date.
+ *
+ *  Return: Date
+ **/
+Date null_date() {
+	Date dDate = {"00", "00", "0000"};
+	return dDate;
+}
+
+/**
+ * Function: is_null_date
+ * --------------------
+ * Checks if a date is null.
+ *
+ *  Return: int
+ **/
+int is_null_date(Date dDate) {
+	return strcmp(dDate.day, "00") == 0;
+}
+
+/**
+ * Function: read_date
+ * --------------------
+ * Reads a date in DD-MM-YY
+ * from a string.
+ *
+ *  Return: void
+ **/
 void read_date(Date* dDate, char* arg) {
 	strncpy(dDate->day, arg, 2);
 	dDate->day[2] = '\0';
@@ -312,6 +402,15 @@ void read_date(Date* dDate, char* arg) {
 	dDate->year[4] = '\0';
 }
 
+/**
+ * Function: advance_day
+ * --------------------
+ * Advances a day in a date
+ * and calculates the month
+ * and year accordingly.
+ *
+ *  Return: void
+ **/
 void advance_day(int* iDate) {
 	iDate[0]++;
 	if (iDate[0] == 28 && iDate[1] == 2) {
@@ -333,6 +432,13 @@ void advance_day(int* iDate) {
 	}
 }
 
+/**
+ * Function: same_date
+ * --------------------
+ * Checks if two dates are the same.
+ *
+ *  Return: int
+ **/
 int same_date(Date dDate1, Date dDate2) {
 	if (strcmp(dDate1.day, dDate2.day) == 0 && strcmp(dDate1.month, dDate2.month) == 0) {
 		return strcmp(dDate1.year, dDate2.year) == 0;
@@ -340,6 +446,13 @@ int same_date(Date dDate1, Date dDate2) {
 	return FALSE;
 }
 
+/**
+ * Function: invalid_date
+ * --------------------
+ * Checks if a date is invalid.
+ *
+ *  Return: int
+ **/
 int invalid_date(Date dDate) {
 	int iYear;
 	char cToday[CATDATE], cDate[CATDATE], cFuture[CATDATE];
@@ -352,6 +465,14 @@ int invalid_date(Date dDate) {
 	return strcmp(cDate, cFuture) > 0 || strcmp(cDate, cToday) < 0;
 }
 
+/**
+ * Function: arrival_date
+ * --------------------
+ * Calculates the date in
+ * which a flight arrives.
+ *
+ *  Return: void
+ **/
 void arrival_date(char sDest[5][YEAR], Flight fFlight) {
 	int i, iDurMins, iDurHours;
 	int iTime[5];
@@ -382,6 +503,25 @@ void arrival_date(char sDest[5][YEAR], Flight fFlight) {
 	sprintf(sDest[4], "%d", iTime[4]);
 }
 
+void fill_arrival_date(Flight* fFlight) {
+	char sTime[5][YEAR];
+	arrival_date(sTime, *fFlight);
+	strcpy(fFlight->arrTime.mins, sTime[0]);
+	strcpy(fFlight->arrTime.hours, sTime[1]);
+	strcpy(fFlight->arrDate.day, sTime[2]);
+	strcpy(fFlight->arrDate.month, sTime[3]);
+	strcpy(fFlight->arrDate.year, sTime[4]);
+}
+
+/**
+ * Function: read_time
+ * --------------------
+ * Reads a time in HH:MM
+ * or in H:MM from a string
+ * and formats it to HH:MM.
+ *
+ *  Return: void
+ **/
 void read_time(Time* tTime, char* arg) {
 	int iTime[TUPLE];
 	read_duration(iTime, arg);
@@ -389,6 +529,16 @@ void read_time(Time* tTime, char* arg) {
 	convert_to_str(tTime->mins, iTime[1]);
 }
 
+/**
+ * Function: read_duration
+ * --------------------
+ * Reads a duration in HH:MM
+ * or in H:MM from a string
+ * and returns how much has
+ * the pointer advanced.
+ *
+ *  Return: int
+ **/
 int read_duration(int* iDest, char* arg) {
 	char cAux[MINS];
 	int i, iOffset;
@@ -407,6 +557,14 @@ int read_duration(int* iDest, char* arg) {
 	return iOffset;
 }
 
+/**
+ * Function: add_ap
+ * --------------------
+ * Adds an airport to
+ * aAirports.
+ *
+ *  Return: void
+ **/
 void add_ap(char* arg) {
 	int i;
 	Airport aNewAirport;
@@ -445,6 +603,14 @@ void add_ap(char* arg) {
 	printf("airport %s\n", aNewAirport.id);
 }
 
+/**
+ * Function: list_all_ap
+ * --------------------
+ * Lists all airports, sorting
+ * them alphabetically.
+ *
+ *  Return: void
+ **/
 void list_all_ap() {
 	int i;
 	quicksort_ap(0, iCurrentAirports - 1);
@@ -453,6 +619,14 @@ void list_all_ap() {
 	}
 }
 
+/**
+ * Function: list_ap
+ * --------------------
+ * Lists airports requested
+ * by the user.
+ *
+ *  Return: void
+ **/
 void list_ap(char* arg) {
 	int i, iIndexAp, iSize = strlen(arg);
 	char sAux[IDAP];
@@ -469,6 +643,13 @@ void list_ap(char* arg) {
 	}
 }
 
+/**
+ * Function: list_all_fl
+ * --------------------
+ * Lists all flights.
+ *
+ *  Return: void
+ **/
 void list_all_fl() {
 	int i;
 	for (i = 0; i < iCurrentFlights; i++) {
@@ -476,9 +657,16 @@ void list_all_fl() {
 	}
 }
 
+/**
+ * Function: add_fl
+ * --------------------
+ * Adds a flight to fFlights
+ *
+ *  Return: void
+ **/
 void add_fl(char* arg) {
 	int i, iDepartureIndex, iOffset, iIdSize;
-	char cCapacity[CAPACITY], sTime[5][YEAR];
+	char cCapacity[CAPACITY];
 	Flight fNewFlight;
 	for (i = 0; arg[i] != ' '; i++) {
 		if (isupper(arg[i]) && i < 2) {
@@ -553,13 +741,8 @@ void add_fl(char* arg) {
 		printf("invalid capacity\n");
 		return;
 	}
-	/* Calculating and saving arrival date */
-	arrival_date(sTime, fNewFlight);
-	strcpy(fNewFlight.arrTime.mins, sTime[0]);
-	strcpy(fNewFlight.arrTime.hours, sTime[1]);
-	strcpy(fNewFlight.arrDate.day, sTime[2]);
-	strcpy(fNewFlight.arrDate.month, sTime[3]);
-	strcpy(fNewFlight.arrDate.year, sTime[4]);
+	/* Signaling arrival time has not yet been calculated */
+	fNewFlight.arrDate = null_date();
 	/* Adding one more flight to the departure counter */
 	aAirports[iDepartureIndex].departures++;
 	/* Adding flight to flight list */
@@ -567,42 +750,66 @@ void add_fl(char* arg) {
 	iCurrentFlights++;
 }
 
+/**
+ * Function: departures
+ * --------------------
+ * Lists all departures from
+ * an airport, sorted by departure
+ * time.
+ *
+ *  Return: void
+ **/
 void departures(char* cId) {
-	int i;
+	int i, iSize;
 	Flight fSortedFlights[MAXFLIGHTS];
-	cId[3] = '\0';
+	cId[IDAP-1] = '\0';
 	if (find_ap(cId) == NOTFOUND) {
 		printf("%s: no such airport ID\n", cId);
 		return;
 	}
-	copy_flights(fSortedFlights);
-	quicksort_fl(fSortedFlights, 0, iCurrentFlights-1, FALSE);
-	for (i = 0; i < iCurrentFlights; i++) {
-		if (strcmp(cId, fSortedFlights[i].departure) == 0) {
+	iSize = copy_flights(fSortedFlights, cId, FALSE);
+	if (iSize != 0) {
+		quicksort_fl(fSortedFlights, 0, iSize-1, FALSE);
+		for (i = 0; i < iSize; i++) {
 			print_fl(fSortedFlights[i], 1);
 		}
 	}
 }
 
+/**
+ * Function: arrivals
+ * --------------------
+ * Lists all arrivals from
+ * an airport, sorted by arival
+ * time.
+ *
+ *  Return: void
+ **/
 void arrivals(char* cId) {
-	int i;
+	int i, iSize;
 	Flight fSortedFlights[MAXFLIGHTS];
-	cId[3] = '\0';
+	cId[IDAP-1] = '\0';
 	if (find_ap(cId) == NOTFOUND) {
 		printf("%s: no such airport ID\n", cId);
 		return;
 	}
-	copy_flights(fSortedFlights);
-	quicksort_fl(fSortedFlights, 0, iCurrentFlights-1, TRUE);
-	for (i = 0; i < iCurrentFlights; i++) {
-		if (strcmp(cId, fSortedFlights[i].arrival) == 0) {
+	/* Calculating and saving arrival date */
+	iSize = copy_flights(fSortedFlights, cId, TRUE);
+	if (iSize != 0) {
+		quicksort_fl(fSortedFlights, 0, iSize-1, TRUE);
+		for (i = 0; i < iSize; i++) {
 			print_fl(fSortedFlights[i], 2);
-			printf("%s-%s-%s ", fSortedFlights[i].arrDate.day, fSortedFlights[i].arrDate.month, fSortedFlights[i].arrDate.year);
-			printf("%s:%s\n", fSortedFlights[i].arrTime.hours, fSortedFlights[i].arrTime.mins);
 		}
 	}
 }
 
+/**
+ * Function: advance_date
+ * --------------------
+ * Advances system date.
+ *
+ *  Return: void
+ **/
 void advance_date(char* arg) {
 	Date dNewToday;
 	read_date(&dNewToday, arg);
