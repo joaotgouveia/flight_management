@@ -23,8 +23,6 @@ void format_time_fl(char* dest, Flight f, int iArrivals);
 void print_fl(Flight fFlight, int iMode);
 /* Date related funtions */
 void convert_to_str(char* sDest, int iTime);
-Date null_date();
-int is_null_date(Date dDate);
 void read_date(Date* dDate, char* arg);
 void advance_day(int* iDate);
 int same_date(Date dDate1, Date dDate2);
@@ -227,9 +225,6 @@ int copy_flights(Flight* fArray, char* cId, int iArrivals) {
 	if (iArrivals) {
 		for (i = 0; i < iCurrentFlights; i++) {
 			if (strcmp(fFlights[i].arrival, cId) == 0) {
-				if (is_null_date(fFlights[i].arrDate)) {
-					fill_arrival_date(&fFlights[i]);
-				}
 				fArray[iSize] = fFlights[i];
 				iSize++;
 			}
@@ -379,29 +374,6 @@ void convert_to_str(char* sDest, int iTime) {
 }
 
 /**
- * Function: null_date
- * --------------------
- * Creates a null date.
- *
- *  Return: Date
- **/
-Date null_date() {
-	Date dDate = {"00", "00", "0000"};
-	return dDate;
-}
-
-/**
- * Function: is_null_date
- * --------------------
- * Checks if a date is null.
- *
- *  Return: int
- **/
-int is_null_date(Date dDate) {
-	return strcmp(dDate.day, "00") == 0;
-}
-
-/**
  * Function: read_date
  * --------------------
  * Reads a date in DD-MM-YY
@@ -428,23 +400,23 @@ void read_date(Date* dDate, char* arg) {
  *  Return: void
  **/
 void advance_day(int* iDate) {
-	iDate[0]++;
-	if (iDate[0] == 28 && iDate[1] == 2) {
-		iDate[0] = 1;
-		iDate[1] += 1;
+	iDate[2]++;
+	if (iDate[2] == 28 && iDate[3] == 2) {
+		iDate[2] = 1;
+		iDate[3] += 1;
 	}
-	else if (iDate[0] == 31 && (iDate[1] == 4 || iDate[1] == 6 || iDate[1] == 9 || iDate[1] == 11)) {
-		iDate[0] = 1;
-		iDate[1] += 1;
+	else if (iDate[2] == 31 && (iDate[3] == 4 || iDate[3] == 6 || iDate[3] == 9 || iDate[3] == 11)) {
+		iDate[2] = 1;
+		iDate[3] += 1;
 	}
-	else if (iDate[0] == 32 && (iDate[1] == 1 || iDate[1] == 3 || iDate[1] == 5 || iDate[1] == 7 || iDate[1] == 8 || iDate[1] == 10)) {
-		iDate[0] = 1;
-		iDate[1] += 1;
+	else if (iDate[2] == 32 && (iDate[3] == 1 || iDate[3] == 3 || iDate[3] == 5 || iDate[3] == 7 || iDate[3] == 8 || iDate[3] == 10)) {
+		iDate[2] = 1;
+		iDate[3] += 1;
 	}
-	else if (iDate[0] == 32 && iDate[1] == 12) {
-		iDate[0] = 1;
-		iDate[1] = 1;
-		iDate[2] += 1;
+	else if (iDate[2] == 32 && iDate[3] == 12) {
+		iDate[2] = 1;
+		iDate[3] = 1;
+		iDate[4] += 1;
 	}
 }
 
@@ -509,7 +481,7 @@ void arrival_date(char sDest[5][YEAR], Flight fFlight) {
 	}
 	if (iTime[1] >= 24) {
 		iTime[1] -= 24;
-		advance_day(iTime+2);
+		advance_day(iTime);
 	}
 	/* Converting back to string and formatting all elements except year */
 	for (i = 0; i < 4; i++) {
@@ -539,10 +511,14 @@ void fill_arrival_date(Flight* fFlight) {
  *  Return: void
  **/
 void read_time(Time* tTime, char* arg) {
-	int iTime[TUPLE];
-	read_duration(iTime, arg);
-	convert_to_str(tTime->hours, iTime[0]);
-	convert_to_str(tTime->mins, iTime[1]);
+	strncpy(tTime->hours, arg, 2);
+	tTime->hours[2] = '\0';
+	strncpy(tTime->mins, arg+HOURS, 2);
+	tTime->mins[2] = '\0';
+	strncpy(tTime->hours, arg, HOURS-1);
+	tTime->hours[HOURS-1] = '\0';
+	strncpy(tTime->mins, arg+HOURS, MINS-1);
+	tTime->mins[MINS-1] = '\0';
 }
 
 /**
@@ -605,13 +581,11 @@ void add_ap(char* arg) {
 	int i;
 	Airport aNewAirport;
 	for (i = 0; i < IDAP-1; i++) {
-		if (isupper(arg[i])) {
-			aNewAirport.id[i] = arg[i];
-		}
-		else {
+		if (!isupper(arg[i])) {
 			printf("invalid airport ID\n");
 			return;
 		}
+		aNewAirport.id[i] = arg[i];
 	}
 	aNewAirport.id[i] = '\0';
 	/* Checking if there are too many airports */
@@ -649,9 +623,11 @@ void add_ap(char* arg) {
  **/
 void list_all_ap() {
 	int i;
-	quicksort_ap(0, iCurrentAirports - 1);
-	for (i = 0; i < iCurrentAirports; i++) {
-		print_ap(aAirports[i]);
+	if (iCurrentAirports != 0) {
+		quicksort_ap(0, iCurrentAirports - 1);
+		for (i = 0; i < iCurrentAirports; i++) {
+			print_ap(aAirports[i]);
+		}
 	}
 }
 
@@ -701,7 +677,7 @@ void list_all_fl() {
  *  Return: void
  **/
 void add_fl(char* arg) {
-	int i, iDepartureIndex, iOffset, iIdSize;
+	int i, iDepartureIndex, iOffset;
 	char cCapacity[CAPACITY];
 	Flight fNewFlight;
 	for (i = 0; arg[i] != ' '; i++) {
@@ -712,11 +688,6 @@ void add_fl(char* arg) {
 		fNewFlight.id[i] = arg[i];
 	}	
 	fNewFlight.id[i] = '\0';
-	iIdSize = strlen(fNewFlight.id);
-	if (iIdSize > IDFL || iIdSize < 3) {
-		printf("invalid flight code\n");
-		return;
-	}
 	arg += i+1;
 	read_date(&fNewFlight.date, arg+DATESTART);
 	for (i = 0; i < iCurrentAirports; i++) {
@@ -768,8 +739,8 @@ void add_fl(char* arg) {
 		printf("invalid capacity\n");
 		return;
 	}
-	/* Signaling arrival time has not yet been calculated */
-	fNewFlight.arrDate = null_date();
+	/* Calculating arrival date */
+	fill_arrival_date(&fNewFlight);
 	/* Adding one more flight to the departure counter */
 	aAirports[iDepartureIndex].departures++;
 	/* Adding flight to flight list */
@@ -818,5 +789,5 @@ void advance_date(char* arg) {
 		return;
 	}
 	today = dNewToday;
-	printf("%s-%s-%s\n", dNewToday.day, dNewToday.month, dNewToday.year);
+	printf("%s-%s-%s\n", today.day, today.month, today.year);
 }
