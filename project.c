@@ -401,7 +401,7 @@ void read_date(Date* dDate, char* arg) {
  **/
 void advance_day(int* iDate) {
 	iDate[2]++;
-	if (iDate[2] == 28 && iDate[3] == 2) {
+	if (iDate[2] == 29 && iDate[3] == 2) {
 		iDate[2] = 1;
 		iDate[3] += 1;
 	}
