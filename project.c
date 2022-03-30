@@ -365,12 +365,7 @@ int invalid_idfl(char cChar, int iIndex) {
  *  Return: void
  **/
 void convert_to_str(char* sDest, int iTime) {
-	sprintf(sDest, "%d", iTime);
-	if (strlen(sDest) == 1) {
-		sDest[1] = sDest[0];
-		sDest[0] = '0';
-		sDest[2] = '\0';
-	}
+	sprintf(sDest, "%02d", iTime);
 }
 
 /**
