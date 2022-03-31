@@ -1,4 +1,6 @@
-/* Defining structs */
+/* Joao Gouveia - 102611
+ * File defining structs */
+
 typedef struct {
 	char day[DAY];
 	char month[MONTH];

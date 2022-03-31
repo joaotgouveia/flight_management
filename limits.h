@@ -1,3 +1,6 @@
+/* Joao Gouveia - 102611
+ * File defining constants */
+
 /* Airport related values */
 #define MAXAIRPORTS 40
 #define IDAP 4
