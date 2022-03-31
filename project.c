@@ -1,3 +1,6 @@
+/* Joao Gouveia - 102611
+ * File containing project code */
+
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
@@ -44,10 +47,10 @@ void arrivals(char* cId);
 void advance_date(char* arg);
 
 /* Global variables */
-Airport aAirports[MAXAIRPORTS];
-Flight fFlights[MAXFLIGHTS];
-int iCurrentAirports, iCurrentFlights;
-Date today = {"01", "01", "2022"};
+Airport aAirports[MAXAIRPORTS]; /* Airport array */
+Flight fFlights[MAXFLIGHTS]; /* Flight array */
+int iCurrentAirports, iCurrentFlights; /* Airport and flight counters */
+Date today = {"01", "01", "2022"}; /* Program starting date */
 
 int main () {
 	char arg[ARGSIZE];
