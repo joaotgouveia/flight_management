@@ -24,9 +24,12 @@ void swap_fl(Flight* fArray, int i, int j);
 /* Flight related funtions */
 void format_time_fl(char* dest, Flight f, int iArrivals);
 void print_fl(Flight fFlight, int iMode);
+int invalid_idfl(char cChar, int iIndex);
+int same_flight(Flight fFlight1, Flight fFlight2);
 /* Date related funtions */
 void convert_to_str(char* sDest, int iTime);
 void read_date(Date* dDate, char* arg);
+int is_30days(int iMonth);
 void advance_day(int* iDate);
 int same_date(Date dDate1, Date dDate2);
 int invalid_date(Date dDate);
@@ -209,10 +212,9 @@ int find_ap(char cId[IDAP]) {
 void format_time_fl(char* dest, Flight f, int iArrivals) {
 	if (iArrivals) {
 		sprintf(dest, "%s%s%s%s%s", f.arrDate.year, f.arrDate.month, f.arrDate.day, f.arrTime.hours, f.arrTime.mins);
+		return;
 	}
-	else {
-		sprintf(dest, "%s%s%s%s%s", f.date.year, f.date.month, f.date.day, f.time.hours, f.time.mins);
-	}
+	sprintf(dest, "%s%s%s%s%s", f.date.year, f.date.month, f.date.day, f.time.hours, f.time.mins);
 }
 
 /**
@@ -232,13 +234,12 @@ int copy_flights(Flight* fArray, char* cId, int iArrivals) {
 				iSize++;
 			}
 		}
+		return iSize;
 	}
-	else {
-		for (i = 0; i < iCurrentFlights; i++) {
-			if (strcmp(fFlights[i].departure, cId) == 0) {
-				fArray[iSize] = fFlights[i];
-				iSize++;
-			}
+	for (i = 0; i < iCurrentFlights; i++) {
+		if (strcmp(fFlights[i].departure, cId) == 0) {
+			fArray[iSize] = fFlights[i];
+			iSize++;
 		}
 	}
 	return iSize;
@@ -358,6 +359,20 @@ int invalid_idfl(char cChar, int iIndex) {
 }
 
 /**
+ * Function: same_flight
+ * --------------------
+ * Checks if two flights are the same.
+ *
+ *  Return: int
+ **/
+int same_flight(Flight fFlight1, Flight fFlight2) {
+	if (strcmp(fFlight1.id, fFlight2.id) == 0) {
+		return same_date(fFlight1.date, fFlight2.date);
+	}
+	return FALSE;
+}
+
+/**
  * Function: convert_to_str
  * --------------------
  * Converts a number to 
@@ -380,12 +395,23 @@ void convert_to_str(char* sDest, int iTime) {
  *  Return: void
  **/
 void read_date(Date* dDate, char* arg) {
-	strncpy(dDate->day, arg, 2);
-	dDate->day[2] = '\0';
-	strncpy(dDate->month, arg+DAY, 2);
-	dDate->month[2] = '\0';
-	strncpy(dDate->year, arg+DAY+MONTH, 4);
-	dDate->year[4] = '\0';
+	strncpy(dDate->day, arg, DAY-1);
+	dDate->day[DAY-1] = '\0';
+	strncpy(dDate->month, arg+DAY, DAY-1);
+	dDate->month[DAY-1] = '\0';
+	strncpy(dDate->year, arg+DAY+MONTH, YEAR-1);
+	dDate->year[YEAR-1] = '\0';
+}
+
+/**
+ * Function: is_30days
+ * --------------------
+ * Checks if a month has 30 days.
+ *
+ *  Return: int
+ **/
+int is_30days(int iMonth) {
+	return (iMonth == 4 || iMonth == 6 || iMonth == 9 || iMonth == 11);
 }
 
 /**
@@ -398,23 +424,27 @@ void read_date(Date* dDate, char* arg) {
  *  Return: void
  **/
 void advance_day(int* iDate) {
-	iDate[2]++;
-	if (iDate[2] == 29 && iDate[3] == 2) {
-		iDate[2] = 1;
-		iDate[3] += 1;
+	iDate[0]++;
+	if (iDate[0] == 29 && iDate[1] == 2) {
+		iDate[0] = 1;
+		iDate[1] += 1;
+		return;
 	}
-	else if (iDate[2] == 31 && (iDate[3] == 4 || iDate[3] == 6 || iDate[3] == 9 || iDate[3] == 11)) {
-		iDate[2] = 1;
-		iDate[3] += 1;
+	if (iDate[0] == 31 && is_30days(iDate[1])) {
+		iDate[0] = 1;
+		iDate[1] += 1;
+		return;
 	}
-	else if (iDate[2] == 32 && (iDate[3] == 1 || iDate[3] == 3 || iDate[3] == 5 || iDate[3] == 7 || iDate[3] == 8 || iDate[3] == 10)) {
-		iDate[2] = 1;
-		iDate[3] += 1;
+	if (iDate[0] == 32 && !is_30days(iDate[1]) && iDate[1] != 12) {
+		iDate[0] = 1;
+		iDate[1] += 1;
+		return;
 	}
-	else if (iDate[2] == 32 && iDate[3] == 12) {
-		iDate[2] = 1;
-		iDate[3] = 1;
-		iDate[4] += 1;
+	if (iDate[0] == 32 && iDate[1] == 12) {
+		iDate[0] = 1;
+		iDate[1] = 1;
+		iDate[2] += 1;
+		return;
 	}
 }
 
@@ -479,7 +509,7 @@ void arrival_date(char sDest[5][YEAR], Flight fFlight) {
 	}
 	if (iTime[1] >= 24) {
 		iTime[1] -= 24;
-		advance_day(iTime);
+		advance_day(iTime+2);
 	}
 	/* Converting back to string and formatting all elements except year */
 	for (i = 0; i < 4; i++) {
@@ -509,10 +539,6 @@ void fill_arrival_date(Flight* fFlight) {
  *  Return: void
  **/
 void read_time(Time* tTime, char* arg) {
-	strncpy(tTime->hours, arg, 2);
-	tTime->hours[2] = '\0';
-	strncpy(tTime->mins, arg+HOURS, 2);
-	tTime->mins[2] = '\0';
 	strncpy(tTime->hours, arg, HOURS-1);
 	tTime->hours[HOURS-1] = '\0';
 	strncpy(tTime->mins, arg+HOURS, MINS-1);
@@ -558,10 +584,7 @@ int invalid_duration(int* iDuration) {
 	if(iDuration[0] > 12) {
 		return TRUE;
 	}
-	else if (iDuration[0] == 12 && iDuration[1] > 0) {
-		return TRUE;
-	}
-	else if (iDuration[0] <= 0 && iDuration[1] <= 0) {
+	if (iDuration[0] == 12 && iDuration[1] > 0) {
 		return TRUE;
 	}
 	return FALSE;
@@ -688,8 +711,8 @@ void add_fl(char* arg) {
 	fNewFlight.id[i] = '\0';
 	arg += i+1;
 	read_date(&fNewFlight.date, arg+DATESTART);
-	for (i = 0; i < iCurrentAirports; i++) {
-		if (strcmp(fFlights[i].id, fNewFlight.id) == 0 && same_date(fFlights[i].date, fNewFlight.date)) {
+	for (i = 0; i < iCurrentFlights; i++) {
+		if (same_flight(fFlights[i], fNewFlight)) {
 			printf("flight already exists\n");
 			return;
 		}
@@ -737,7 +760,7 @@ void add_fl(char* arg) {
 		printf("invalid capacity\n");
 		return;
 	}
-	/* Calculating arrival date */
+	/* Calculating and storing arrival date */
 	fill_arrival_date(&fNewFlight);
 	/* Adding one more flight to the departure counter */
 	aAirports[iDepartureIndex].departures++;
